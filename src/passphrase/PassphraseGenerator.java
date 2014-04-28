@@ -27,6 +27,7 @@ public class PassphraseGenerator {
     public static final int NUM_DIE = 5;
     public static final int MAX_WORDS = 6;
     private Map<Integer, String> wordlist;
+    private Map<Character, Integer> histogram;
     private int alphabetSize;
     private Die [] dice;
 
@@ -41,6 +42,8 @@ public class PassphraseGenerator {
             if (args.length == 0) {  // Generate a random pass phrase
                 Reader reader = createWordlistReader("diceware.wordlist.asc.txt");
                 PassphraseGenerator generator = new PassphraseGenerator(reader);
+                System.out.println(String.format("# keys: %d", generator.getHistogram().keySet().size()));
+                System.out.println(generator.getHistogram());
                 List<String> words = new ArrayList<String>();
                 for (int i = 1; i <= MAX_WORDS; ++i) {
                     int key = generator.generateKey();
@@ -152,12 +155,19 @@ public class PassphraseGenerator {
      */
     private void init(Reader reader, Long seed) throws IOException {
         this.wordlist = readWordlist(reader);
+        this.histogram = Utils.createHistogram(this.wordlist.values());
         this.alphabetSize = calculateAlphabetSize();
         this.dice = new Die[NUM_DIE];
         for (int i = 0; i < NUM_DIE; ++i) {
             this.dice[i] = (seed == null ? new Die() : new Die(seed));
         }
     }
+
+    /**
+     * Read access to character frequency histogram
+     * @return Map of character/count pairs.
+     */
+    public Map<Character, Integer> getHistogram() { return this.histogram; }
 
     /**
      * Generate a random key value by rolling NUM_DIE six-sided dies
@@ -292,22 +302,8 @@ public class PassphraseGenerator {
                 }
             }
         } finally {
-            close(br);
+            Utils.close(br);
         }
         return wordList;
-    }
-
-    /**
-     * Close a Reader quietly
-     * @param reader to close
-     */
-    public static void close(Reader reader) {
-        try {
-            if (reader != null) {
-                reader.close();
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 }
